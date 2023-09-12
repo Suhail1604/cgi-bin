@@ -1,0 +1,479 @@
+
+import tkinter as tk
+from tkinter import ttk
+import os
+import boto3
+import pywhatkit
+from tkinter import simpledialog
+import speech_recognition as sr
+import datetime as dt
+import cv2
+import time
+import smtplib
+from googlesearch import search
+from geopy.geocoders import Nominatim
+import numpy as np
+import webbrowser
+voice_assistance_button = None
+
+def create_basic_window():
+    global voice_assistance_button
+    root = tk.Tk()
+    root.title("Aware")
+    root.geometry("1500x900")
+    root.configure(bg="#333") 
+    
+    button_styles = {
+    "width": 18,
+    "height": 2,
+    "font": ("Helvetica", 12),
+    "fg": "#fff",  # Text color
+    "bg": "#007bff"  # Button color
+    }
+    
+    # Create a title label
+    title_label = tk.Label(root, text="Team Aware", font=("calibri", 20, "bold"))
+    title_label.pack(fill=tk.X, padx=10, pady=10)
+
+    # Create a scrollbar
+    scrollbar = tk.Scrollbar(root, orient=tk.VERTICAL)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    #date
+    date = dt.datetime.now()
+    label = tk.Label(root,text="%s"%(date)).pack()
+
+    # Add widgets and functionality here
+    label = tk.Label(root, text="Hello jarvis here :")
+    label.pack()
+    
+    # Create a canvas to hold the frame with the buttons and entry fields
+    canvas = tk.Canvas(root, yscrollcommand=scrollbar.set)
+    canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    scrollbar.config(command=canvas.yview)
+
+    # Create a frame to hold the buttons and entry fields
+    main_frame = ttk.Frame(canvas)
+    canvas.create_window((0, 0), window=main_frame, anchor=tk.NW)
+
+
+    voice_assistance_button = tk.Button(root, text="Voice Assistance", command=enable_voice_assistance, **button_styles)
+    voice_assistance_button.pack(pady=20)
+
+    button = tk.Button(root, text="Email", command=on_button_email, **button_styles)
+    button.pack(pady=10)
+    #button.place(relx=0.5, rely=0.35, anchor=tk.CENTER)
+
+    button = tk.Button(root, text="EC2", command=on_button_ec2,**button_styles)
+    button.pack(pady=10)
+    #button.place(relx=0.5, rely=0.35, anchor=tk.CENTER)
+
+    button = tk.Button(root, text="Notepad", command=on_button_click, **button_styles)
+    button.pack(pady=10)
+    
+    # Update the scrollable region
+    main_frame.update_idletasks()
+    canvas.config(scrollregion=canvas.bbox("all"))
+
+
+    button = tk.Button(root, text="Chrome", command=on_click,**button_styles)
+    button.pack(pady=10)
+
+    #button = tk.Button(root, text="Paint", command=on_click_paint,**button_styles)
+    
+    #button.pack(pady=10)
+
+    #button = tk.Button(root, text="Word", command=on_click_word, **button_styles)
+    #button.pack(pady=10)
+    
+    button = tk.Button(root, text="Control Panel", command=controlPanel, **button_styles)
+    button.pack(pady=10)
+    
+    button = tk.Button(root, text="Add S3 Bucket", command=s3_bucket_create, **button_styles)
+    button.pack(pady=10)
+    
+    button = tk.Button(root, text="Play on youtube", command=youtubemusic, **button_styles)
+    button.pack(pady=10)
+   
+    #button = tk.Button(root,text="Click Photo", command=take_photo , **button_styles)
+    #button.pack(pady=10)
+    
+    button = tk.Button(root,text="Google Search", command=googleSearchindisplay, **button_styles)
+    button.pack(pady=10)
+    
+    button = tk.Button(root,text="Power of CGI", command=open_link, **button_styles)
+    button.pack(pady=10)
+    
+    button = tk.Button(root,text="Exit",width=10,fg="#fff",bg="#f00",command=root.destroy)
+    button.pack(pady=10)
+    
+    
+    root.mainloop()
+def get_voice_input():
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening...")
+        recognizer.adjust_for_ambient_noise(source)
+        audio = recognizer.listen(source)
+    
+    try:
+        print("Recognizing...")
+        user_input = recognizer.recognize_google(audio)
+        print(f"User said: {user_input}")
+        return user_input
+    except sr.UnknownValueError:
+        print("Sorry, I could not understand what you said.")
+        return None
+    except sr.RequestError:
+        print("There was a problem with the speech recognition service.")
+        return None
+
+def enable_voice_assistance():
+    global voice_assistance_button
+
+    voice_assistance_button.config(state=tk.DISABLED)
+    user_input = get_voice_input()
+    if user_input:
+        process_voice_command(user_input)
+    voice_assistance_button.config(state=tk.ACTIVE)
+
+def process_voice_command(command):
+
+    if "email" in command:
+        on_button_email()
+    elif "EC2" in command:
+        on_button_ec2()
+    elif "notepad" in command:
+        on_button_click()
+    elif "chrome" in command:
+        on_click()
+    elif "paint" in command:
+        on_click_paint()
+    elif "word" in command:
+        on_click_word()
+    else:
+        print("Command not recognized.")
+
+def on_button_ec2():
+    myec2 = boto3.client("ec2")
+    response = myec2.run_instances(
+        ImageId='ami-0ded8326293d3201b',
+        InstanceType='t2.micro',
+        MaxCount=1,
+        MinCount=1
+    )
+
+def on_button_email():
+    msg = "Hello from python"
+    recipient_email = get_voice_input()
+    if not recipient_email:  # If voice input fails, use text-based input dialog
+        recipient_email = simpledialog.askstring("Input", "Enter recipient's email address:")
+    if recipient_email:
+        pywhatkit.send_mail("testprect@gmail.com", "aljeobaueiacqtko", "test code",msg, recipient_email)
+
+def on_button_click():
+    os.system("notepad")
+
+def on_click():
+    os.system("start chrome")
+    
+def on_click_paint():
+    os.system("start mspaint")
+
+def on_click_word():
+    os.system("start write")
+    
+def controlPanel():
+    value="Opening Control pannel done "
+    display.config(text=value)
+    os.system("start cmd")
+    
+def s3_bucket_create():
+    ec2_client = boto3.client('ec2')
+    response_ec2 = ec2_client.describe_instances()
+
+    # Create an S3 Instance
+    s3_client = boto3.client('s3')
+
+    # Call create_bucket to create an S3 bucket
+    response_s3 = s3_client.create_bucket(
+        ACL='private',  # Use 'private' instead of 'enabled' for private ACL
+        Bucket='sha789 d87',
+        CreateBucketConfiguration={
+            'LocationConstraint': 'ap-south-1'  # Use the region code, not the region name
+        }
+    )
+
+def youtubemusic():
+    
+    final_music = "dil meri na sune"
+    print(f"playing {final_music} on youtube")
+    pywhatkit.playonyt(final_music)
+    
+def take_photo():
+    cap = cv2.VideoCapture(0)
+    time.sleep(1)
+    ret, frame = cap.read()
+    if ret:
+        cv2.imshow('photo11234.jpg', frame)
+        cv2.imwrite('photo11234.jpg',frame)
+        cap.release()
+        cv2.destroyAllWindows()
+        
+def googleSearchindisplay():
+    global value
+    query = input("Enter search : ")
+    for i in search(query,stop=5,num=5):
+        print(i)
+        value = i
+        display.config(text=value)
+        
+
+def open_link():
+    url = "http://18.191.139.184/#"  # Replace this with the desired URL
+    webbrowser.open(url)
+        
+create_basic_window()
+ 
+//image
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Set the dimensions of the image
+width, height = 100, 100
+
+# Create a blank canvas 
+canvas = np.zeros((height, width, 3), dtype=np.uint8)
+
+# Define the number of iterations to create the generative art
+num_iterations = 10000
+
+# Iterate and randomly fill the canvas with colors and patterns
+for _ in range(num_iterations):
+    x, y = np.random.randint(0, width), np.random.randint(0, height)
+    r, g, b = np.random.randint(0, 256), np.random.randint(0, 256), np.random.randint(0, 256)
+    size = np.random.randint(1, 10)  # Random size for the pattern
+    canvas[y -2* size:y + 7*size, x - 6*size:x + 5*size] = [r, g, b]
+
+# Display image
+plt.imshow(canvas)
+plt.axis('off') # Turn off axis
+plt.show()
+//genai
+ 
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+
+width = 2000
+height = 1000
+channel = 3
+
+image = np.zeros((height, width, channel), dtype=np.uint8)
+
+image[0:800,0 :2000 , 0] = 255
+image[0:800,0:2000 , 1] = 127
+image[0:800,0 :2000 , 2] = 39
+
+image[0:800,0 :2000 , 0] = 255
+image[0:800,0:2000 , 1] = 127
+image[0:800,0 :2000 , 2] = 39
+
+image[800:1000,1500 :2000 , 0] = 0
+image[800:1000, 1500: 2000, 1] = 128
+image[800:1000, 1500: 2000, 2] = 0
+
+image[800:1000,0 :500 , 0] = 0
+image[800:1000, 0: 500, 1] = 128
+image[800:1000, 0: 500, 2] = 0
+
+#sun
+sun_radius = 74
+sun_center = (800, 1000)  # (y, x) coordinates
+sun_color = (252, 215, 3)  # Yellow
+
+y_coords, x_coords = np.ogrid[:height, :width]
+distance = np.sqrt((x_coords - sun_center[1]) ** 2 + (y_coords - sun_center[0]) ** 2)
+
+#Create a circular mask for the sun
+sun_mask = distance <= sun_radius
+
+# Apply the sun color to the pixels within the mask
+image[sun_mask] = sun_color
+
+
+#white cloud
+#1
+image[50:100,250 :500 , 0] = 255
+image[50:100,250:500 , 1] = 255
+image[50:100,250 :500 , 2] = 255
+
+image[70:120,280 :590 , 0] = 255
+image[70:120,280:590, 1] = 255
+image[70:120,280 :590 , 2] = 255
+
+#2
+image[50:100,1250 :1500 , 0] = 255
+image[50:100,1250:1500 , 1] = 255
+image[50:100,1250 :1500 , 2] = 255
+
+image[70:120,1280 :1590 , 0] = 255
+image[70:120,1280:1590, 1] = 255
+image[70:120,1280 :1590 , 2] = 255
+
+#blue water
+image[800:1000,500 :1500 , 0] = 0
+image[800:1000,500:1500 , 1] = 181
+image[800:1000,500 :1500 , 2] = 226
+
+image[810:820,900 :1100 , 0] = 252
+image[810:820,900:1100 , 1] = 215
+image[810:820,900 :1100 , 2] = 3
+
+image[840:850,950 :1050 , 0] = 252
+image[840:850,950:1050 , 1] = 215
+image[840:850,950 :1050 , 2] = 3
+
+image[870:880,970 :1020 , 0] = 252
+image[870:880,970:1020 , 1] = 215
+image[870:880,970 :1020 , 2] = 3
+
+#base green
+image[600:800,0 :500 , 0] = 114
+image[600:800, 0: 500, 1] = 238
+image[600:800, 0: 500, 2] = 114
+
+image[600:800,1500 :2000 , 0] = 114
+image[600:800, 1500: 2000, 1] = 238
+image[600:800, 1500: 2000, 2] = 114
+
+#railway
+image[250:550,250 :2000 , 0] = 175
+image[250:550,250: 2000, 1] = 172
+image[250:550,250: 2000, 2] = 165
+
+image[290:550,250 :2000 , 0] = 0
+image[290:550,250: 2000, 1] = 0
+image[290:550,250: 2000, 2] = 255
+
+#white window
+image[350:480, 500 :750 , 0] = 255
+image[350:480, 500: 750, 1] = 255
+image[350:480, 500: 750, 2] = 255
+
+image[350:480, 900 :1250 , 0] = 255
+image[350:480, 900: 1250, 1] = 255
+image[350:480, 900: 1250, 2] = 255
+
+image[350:480, 1400 :1750 , 0] = 255
+image[350:480, 1400: 1750, 1] = 255
+image[350:480, 1400: 1750, 2] = 255
+
+#door
+image[350:550, 1900 :2000 , 0] = 0
+image[350:550, 1900: 2000, 1] = 0
+image[350:550, 1900: 2000, 2] = 0
+
+#bridge black
+image[200:600,1500 :1600 , 0] = 0
+image[200:600, 1500: 1600, 1] = 0
+image[200:600, 1500: 1600, 2] = 0
+
+image[200:600, 400 :500 , 0] = 0
+image[200:600, 400: 500, 1] = 0
+image[200:600, 400: 500, 2] = 0
+
+image[200:600, 950 :1050 , 0] = 0
+image[200:600, 950: 1050, 1] = 0
+image[200:600, 950: 1050, 2] = 0
+
+image[550:600, 0 :2000 , 0] = 0
+image[550:600, 0: 2000, 1] = 0
+image[550:600, 0: 2000, 2] = 0
+
+image[200:220, 0 :2000 , 0] = 0
+image[200:220, 0: 2000, 1] = 0
+image[200:220, 0: 2000, 2] = 0
+
+plt.imshow(image)
+plt.axis('on')
+plt.show()
+
+ 
+import folium
+from geopy.geocoders import Nominatim
+
+geolocator = Nominatim(user_agent="location_details")
+location = geolocator.geocode("pune")
+print(location.latitude, location.longitude)
+map = folium.Map(location = [location.latitude, location.longitude],zoom_start=50)
+map.add_child(folium.Marker(location=[location.latitude, location.longitude],popup=location,icon=folium.Icon(color='green')))
+
+ 
+ 
+ 
+gptkey = "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"
+
+serpkey = "ec0b1b881dac4db63d1aa6bf3cb9e4838b4f07217155a0da1847429a407690a6"
+
+import os
+
+from langchain.llms import OpenAI 
+myllm = OpenAI(
+    model= 'text-davinci-003',
+    temperature= 1,
+    openai_api_key= gptkey)
+from langchain.prompts import PromptTemplate
+lwprompt = PromptTemplate(
+    template="tell me 2 best {item} in {country}.",
+    input_variables=["item","country"] )
+
+sanket=lwprompt.format(item="city", country="country")
+
+print(myllm(prompt=sanket))
+
+from langchain.chains import LLMChain
+
+mychain = LLMChain(
+    llm=myllm,
+    prompt=lwprompt)
+
+mychain.run(item="city" , country="london")
+
+from langchain.agents import load_tools
+
+#https://serpapi.com/
+os.environ['SERPAPI_API_KEY'] = serpkey
+
+#serp-search engine rearch page (google search engine)
+serptools=load_tools(tool_names = ["serpapi"])
+
+serptools
+
+from langchain.agents import AgentType
+
+from langchain.agents import initialize_agent
+
+mygooglechain = initialize_agent(
+    llm=myllm ,
+    tools=serptools , 
+    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+)
+
+mygooglechain.run("what is current temperature of jaipur? ")
+
+from serpapi import GoogleSearch
+
+params = {
+  "engine": "youtube",
+  "search_query": "jab we met",
+  "api_key": "ec0b1b881dac4db63d1aa6bf3cb9e4838b4f07217155a0da1847429a407690a6"
+}
+
+search = GoogleSearch(params)
+results = search.get_dict()
+movie_results = results["movie_results"]
+from langchain.tools import YouTubeSearchTool
+
+tool = YouTubeSearchTool()
+tool.run("techburner")
